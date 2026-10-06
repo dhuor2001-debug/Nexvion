@@ -17,3 +17,8 @@ crash.log
 
 # Logs
 *.log
+
+# Runtime
+run/
+logs/
+backups/
