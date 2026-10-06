@@ -16,4 +16,3 @@
 | Application logs | Nginx access and error logs |
 | Security note | Auth and payment are frontend demo only. Passwords/card data must never be treated as real |
 | CSP note | Content-Security-Policy must allow fonts.googleapis.com, fonts.gstatic.com, images.unsplash.com |
- | Set-Content -Path docs\application-analysis.md -Encoding utf8
