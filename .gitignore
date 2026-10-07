@@ -23,3 +23,4 @@ run/
 logs/
 backups/
 tfplan
+ansible/inventory.ini
