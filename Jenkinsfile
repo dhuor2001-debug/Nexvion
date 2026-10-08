@@ -17,6 +17,7 @@ pipeline {
         IMAGE_TAG      = "${env.BUILD_NUMBER}"
         CI_CONTAINER   = 'nexvion-ci'
         CI_PORT        = '8089'
+        AWS_HOST       = '54.147.106.107'
     }
 
     stages {
@@ -121,6 +122,31 @@ pipeline {
                     docker logs ${CI_CONTAINER}
                     exit 1
                 '''
+            }
+        }
+
+        stage('Deploy to AWS') {
+            steps {
+                catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+                    withCredentials([sshUserPrivateKey(credentialsId: 'nexvion-aws-key',
+                                                       keyFileVariable: 'SSH_KEY',
+                                                       usernameVariable: 'SSH_USER')]) {
+                        sh '''
+                            ssh -i "$SSH_KEY" -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15 \
+                                "$SSH_USER@${AWS_HOST}" \
+                                "cd /opt/nexvion && NEXVION_TAG=${IMAGE_TAG} docker compose up -d --pull always"
+                            for i in 1 2 3 4 5 6 7 8 9 10; do
+                                if curl -fs --max-time 5 http://${AWS_HOST}/healthz | grep -q ok; then
+                                    echo "AWS deployment healthy"
+                                    exit 0
+                                fi
+                                sleep 3
+                            done
+                            echo "AWS health check failed"
+                            exit 1
+                        '''
+                    }
+                }
             }
         }
     }
