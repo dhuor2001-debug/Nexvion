@@ -24,3 +24,4 @@ logs/
 backups/
 tfplan
 ansible/inventory.ini
+security/reports/

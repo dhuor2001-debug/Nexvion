@@ -58,7 +58,25 @@ pipeline {
 
         stage('Security Scan') {
             steps {
-                echo 'Placeholder: Trivy image scan and Gitleaks secret scan are added in Step 10.'
+                sh '''
+                    echo "== Gitleaks: secret scan (fails on any leak) =="
+                    docker run --rm -v jenkins_jenkins_home:/var/jenkins_home:ro \
+                        zricethezav/gitleaks:latest detect --source "${WORKSPACE}" --redact --exit-code 1
+
+                    echo "== Trivy: image report (HIGH and CRITICAL) =="
+                    docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v trivy-cache:/root/.cache \
+                        aquasec/trivy:latest image --severity HIGH,CRITICAL --ignore-unfixed --quiet ${IMAGE_NAME}:${IMAGE_TAG}
+
+                    echo "== Trivy: image gate (fails on CRITICAL) =="
+                    docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v trivy-cache:/root/.cache \
+                        aquasec/trivy:latest image --severity CRITICAL --ignore-unfixed --exit-code 1 --quiet ${IMAGE_NAME}:${IMAGE_TAG}
+
+                    echo "== Trivy: config report (docker, k8s, helm) =="
+                    for d in docker k8s helm; do
+                        docker run --rm -v jenkins_jenkins_home:/var/jenkins_home:ro -v trivy-cache:/root/.cache \
+                            aquasec/trivy:latest config --severity HIGH,CRITICAL --quiet "${WORKSPACE}/$d"
+                    done
+                '''
             }
         }
 
