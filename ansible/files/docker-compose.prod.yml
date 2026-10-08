@@ -1,6 +1,6 @@
 services:
   app:
-    image: richieit/nexvion:latest
+    image: richieit/nexvion:${NEXVION_TAG:-latest}
     container_name: nexvion-app
     restart: unless-stopped
     ports:
